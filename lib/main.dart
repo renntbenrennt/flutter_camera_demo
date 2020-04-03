@@ -50,6 +50,8 @@ class _MyHomePageState extends State<MyHomePage> {
             // Obtain a list of the available cameras on the device.
             final cameras = await availableCameras();
 
+            print('cameras ========== $cameras');
+
             // Get a specific camera from the list of available cameras.
             final firstCamera = cameras.first;
 
