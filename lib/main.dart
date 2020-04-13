@@ -8,6 +8,8 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   runApp(MyApp());
+
+  print('test different git remote');
 }
 
 class MyApp extends StatelessWidget {
