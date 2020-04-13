@@ -40,6 +40,8 @@ class _MyHomePageState extends State<MyHomePage> {
     final firstCamera = cameras.first;
   }
 
+  String resultNumber = '';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,24 +49,39 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text('Man up'),
       ),
       body: Center(
-        child: RaisedButton(
-          onPressed: () async {
-            // Obtain a list of the available cameras on the device.
-            final cameras = await availableCameras();
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+//        crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            RaisedButton(
+              onPressed: () async {
+                // Obtain a list of the available cameras on the device.
+                final cameras = await availableCameras();
 
-            print('cameras ========== $cameras');
+                print('cameras ========== $cameras');
 
-            // Get a specific camera from the list of available cameras.
-            final firstCamera = cameras.first;
+                // Get a specific camera from the list of available cameras.
+                final firstCamera = cameras.first;
 
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => TakePictureScreen(camera: firstCamera),
-              ),
-            );
-          },
-          child: Text('You are not your history'),
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        TakePictureScreen(camera: firstCamera),
+                  ),
+                );
+
+                setState(() {
+                  if (result != null) {
+                    print('result ====== $result');
+                    resultNumber = result;
+                  }
+                });
+              },
+              child: Text('take pic'),
+            ),
+            Text(resultNumber),
+          ],
         ),
       ),
     );

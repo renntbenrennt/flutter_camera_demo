@@ -36,6 +36,11 @@ class TakePictureScreenState extends State<TakePictureScreen>
 
   double scanBoxRatio = 0.95;
 
+  bool hasResult = false;
+  String resultNumber = '';
+
+  TextEditingController _textEditingController = TextEditingController();
+
   void _upState() {
     setState(() {});
   }
@@ -96,8 +101,6 @@ class TakePictureScreenState extends State<TakePictureScreen>
     }
   }
 
-  Timer takePicTimer;
-
   void postBandCard(String imgBase) async {
     var url = 'http://192.168.31.18:8000/ocr/getNumber';
     var response = await http.post(url, body: {
@@ -109,9 +112,15 @@ class TakePictureScreenState extends State<TakePictureScreen>
 
     if (jsonDecode(response.body)['data'].length > 0) {
       takePicTimer?.cancel();
-      Navigator.of(context).pop();
+
+      setState(() {
+        hasResult = true;
+        _textEditingController.text = jsonDecode(response.body)['data'];
+      });
     }
   }
+
+  Timer takePicTimer;
 
   @override
   void initState() {
@@ -130,9 +139,9 @@ class TakePictureScreenState extends State<TakePictureScreen>
 
     _initAnimation();
 
-//    takePicTimer = Timer.periodic(Duration(seconds: 3), (_) {
-//      takePic();
-//    });
+    takePicTimer = Timer.periodic(Duration(seconds: 3), (_) {
+      takePic();
+    });
   }
 
   @override
@@ -158,60 +167,66 @@ class TakePictureScreenState extends State<TakePictureScreen>
           if (snapshot.connectionState == ConnectionState.done) {
             // If the Future is complete, display the preview.
             return LayoutBuilder(builder: (context, constraints) {
-              final qrScanSize = constraints.maxWidth * scanBoxRatio;
-              final mediaQuery = MediaQuery.of(context);
-              final positionTop = (constraints.maxHeight - qrScanSize) * 0.6;
-              final positionLeft = (constraints.maxWidth - qrScanSize) / 2;
-              final positionBottom =
+              double qrScanSize = constraints.maxWidth * scanBoxRatio;
+//              double mediaQuery = MediaQuery.of(context);
+              double positionTop = (constraints.maxHeight - qrScanSize) * 0.6;
+              double positionLeft = (constraints.maxWidth - qrScanSize) / 2;
+              double positionBottom =
                   constraints.maxHeight - positionTop - (qrScanSize * 0.68);
+
+              positionTop = positionTop >= 0 ? positionTop : 0;
+              positionBottom = positionBottom >= 0 ? positionBottom : 0;
+
               return Stack(
                 children: <Widget>[
                   CameraPreview(_controller),
                   Positioned(
                     left: 0,
                     top: 0,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          top: BorderSide(
-                            color: Color.fromARGB(125, 0, 0, 0),
-                            width: positionTop,
+                    child: SingleChildScrollView(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(
+                              color: Color.fromARGB(125, 0, 0, 0),
+                              width: positionTop,
+                            ),
+                            left: BorderSide(
+                              color: Color.fromARGB(125, 0, 0, 0),
+                              width: positionLeft,
+                            ),
+                            bottom: BorderSide(
+                              color: Color.fromARGB(125, 0, 0, 0),
+                              width: positionBottom,
+                            ),
+                            right: BorderSide(
+                              color: Color.fromARGB(125, 0, 0, 0),
+                              width: positionLeft,
+                            ),
                           ),
-                          left: BorderSide(
-                            color: Color.fromARGB(125, 0, 0, 0),
-                            width: positionLeft,
-                          ),
-                          bottom: BorderSide(
-                            color: Color.fromARGB(125, 0, 0, 0),
-                            width: positionBottom,
-                          ),
-                          right: BorderSide(
-                            color: Color.fromARGB(125, 0, 0, 0),
-                            width: positionLeft,
-                          ),
-                        ),
 //                        borderRadius: BorderRadius.circular(12.0),
-                      ),
-                      child: CustomPaint(
-                        painter: QrScanBoxPainter(
-                          boxLineColor: boxLineColor,
-                          animationValue: _animationController?.value ?? 0,
-                          isForward: _animationController?.status ==
-                              AnimationStatus.forward,
                         ),
-                        child: SizedBox(
-                          width: qrScanSize,
-                          height: qrScanSize * 0.68,
+                        child: CustomPaint(
+                          painter: QrScanBoxPainter(
+                            boxLineColor: boxLineColor,
+                            animationValue: _animationController?.value ?? 0,
+                            isForward: _animationController?.status ==
+                                AnimationStatus.forward,
+                          ),
+                          child: SizedBox(
+                            width: qrScanSize,
+                            height: qrScanSize * 0.68,
+                          ),
                         ),
                       ),
                     ),
                   ),
                   Positioned(
-                    top: (constraints.maxHeight / 2) - 30,
-                    left: 20,
+                    top: (constraints.maxHeight / 2) - 20,
+                    left: 40,
                     child: Container(
-                      width: constraints.maxWidth - 60,
-                      height: 45,
+                      width: constraints.maxWidth - 80,
+                      height: 40,
                       decoration: BoxDecoration(
                         color: Colors.transparent,
                         border: Border.all(
@@ -221,7 +236,79 @@ class TakePictureScreenState extends State<TakePictureScreen>
                         ),
                       ),
                     ),
-                  )
+                  ),
+                  Visibility(
+                    visible: hasResult,
+                    child: Positioned(
+                      left: positionLeft,
+                      top: positionTop,
+                      width: qrScanSize,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Container(
+                            color: Colors.white,
+                            width: qrScanSize,
+                            height: 0.68 * qrScanSize,
+                            child: Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(21.0),
+                                child: TextField(
+                                  controller: _textEditingController,
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: qrScanSize * 0.1,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            mainAxisSize: MainAxisSize.max,
+                            children: <Widget>[
+                              ButtonTheme(
+                                buttonColor: Colors.red,
+                                child: RaisedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      hasResult = false;
+//                                      resultNumber = '';
+                                      _textEditingController.text = '';
+                                      takePicTimer = Timer.periodic(
+                                          Duration(seconds: 3), (_) {
+                                        takePic();
+                                      });
+                                    });
+                                  },
+                                  child: Text(
+                                    '重新扫描',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              ButtonTheme(
+                                buttonColor: Colors.green,
+                                child: RaisedButton(
+                                  onPressed: () {
+                                    Navigator.of(context)
+                                        .pop(_textEditingController.text);
+                                  },
+                                  child: Text(
+                                    '确认号码',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               );
             });
