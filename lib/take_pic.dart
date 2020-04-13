@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' show join;
 import 'package:path_provider/path_provider.dart';
@@ -33,7 +34,7 @@ class TakePictureScreenState extends State<TakePictureScreen>
 
   Color boxLineColor = Colors.cyanAccent;
 
-  double scanBoxRatio = 0.85;
+  double scanBoxRatio = 0.95;
 
   void _upState() {
     setState(() {});
@@ -98,9 +99,9 @@ class TakePictureScreenState extends State<TakePictureScreen>
   Timer takePicTimer;
 
   void postBandCard(String imgBase) async {
-    var url = 'http://192.168.31.12:7001/bankCardNumber';
+    var url = 'http://192.168.31.18:8000/ocr/getNumber';
     var response = await http.post(url, body: {
-      'apiKey': 'bankCardOcrSystem_1585815785532_537',
+//      'apiKey': 'bankCardOcrSystem_1585815785532_537',
       'imgBase64': imgBase
     });
 
@@ -129,9 +130,9 @@ class TakePictureScreenState extends State<TakePictureScreen>
 
     _initAnimation();
 
-    takePicTimer = Timer.periodic(Duration(seconds: 3), (_) {
-      takePic();
-    });
+//    takePicTimer = Timer.periodic(Duration(seconds: 3), (_) {
+//      takePic();
+//    });
   }
 
   @override
@@ -159,25 +160,68 @@ class TakePictureScreenState extends State<TakePictureScreen>
             return LayoutBuilder(builder: (context, constraints) {
               final qrScanSize = constraints.maxWidth * scanBoxRatio;
               final mediaQuery = MediaQuery.of(context);
+              final positionTop = (constraints.maxHeight - qrScanSize) * 0.6;
+              final positionLeft = (constraints.maxWidth - qrScanSize) / 2;
+              final positionBottom =
+                  constraints.maxHeight - positionTop - (qrScanSize * 0.68);
               return Stack(
                 children: <Widget>[
                   CameraPreview(_controller),
                   Positioned(
-                    left: (constraints.maxWidth - qrScanSize) / 2,
-                    top: (constraints.maxHeight - qrScanSize) * 0.6,
-                    child: CustomPaint(
-                      painter: QrScanBoxPainter(
-                        boxLineColor: boxLineColor,
-                        animationValue: _animationController?.value ?? 0,
-                        isForward: _animationController?.status ==
-                            AnimationStatus.forward,
+                    left: 0,
+                    top: 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(
+                            color: Color.fromARGB(125, 0, 0, 0),
+                            width: positionTop,
+                          ),
+                          left: BorderSide(
+                            color: Color.fromARGB(125, 0, 0, 0),
+                            width: positionLeft,
+                          ),
+                          bottom: BorderSide(
+                            color: Color.fromARGB(125, 0, 0, 0),
+                            width: positionBottom,
+                          ),
+                          right: BorderSide(
+                            color: Color.fromARGB(125, 0, 0, 0),
+                            width: positionLeft,
+                          ),
+                        ),
+//                        borderRadius: BorderRadius.circular(12.0),
                       ),
-                      child: SizedBox(
-                        width: qrScanSize,
-                        height: qrScanSize * 0.68,
+                      child: CustomPaint(
+                        painter: QrScanBoxPainter(
+                          boxLineColor: boxLineColor,
+                          animationValue: _animationController?.value ?? 0,
+                          isForward: _animationController?.status ==
+                              AnimationStatus.forward,
+                        ),
+                        child: SizedBox(
+                          width: qrScanSize,
+                          height: qrScanSize * 0.68,
+                        ),
                       ),
                     ),
                   ),
+                  Positioned(
+                    top: (constraints.maxHeight / 2) - 30,
+                    left: 20,
+                    child: Container(
+                      width: constraints.maxWidth - 60,
+                      height: 45,
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 1.0,
+                          style: BorderStyle.solid,
+                        ),
+                      ),
+                    ),
+                  )
                 ],
               );
             });
@@ -263,7 +307,7 @@ class QrScanBoxPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final borderRadius = BorderRadius.all(Radius.circular(12)).toRRect(
+    final borderRadius = BorderRadius.all(Radius.circular(0)).toRRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
     );
     canvas.drawRRect(
@@ -300,7 +344,7 @@ class QrScanBoxPainter extends CustomPainter {
     path.quadraticBezierTo(0, size.height, 0, size.height - 12);
     path.lineTo(0, size.height - 50);
 
-    canvas.drawPath(path, borderPaint);
+//    canvas.drawPath(path, borderPaint);
 
     canvas.clipRRect(
         BorderRadius.all(Radius.circular(12)).toRRect(Offset.zero & size));
